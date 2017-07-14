@@ -39,7 +39,7 @@ Editor.prototype={
                     Ewin.alert({ message: "不存在已上传图片" });
                 } else {
                     that.imgChange("#content");
-                    $("#imgModal").modal("hide");
+                     $("#imgModal").modal("hide");
                 }
             });
             $(document).on("click","#content>img",function(e){
@@ -69,8 +69,9 @@ Editor.prototype={
         SaveData:function(){
             var that=this;
             $(document).on("click","#btn_Save",function(){
-               var $html=that.getAllHtml();
-               alert($html);
+                var $html = that.getAllHtml();
+                Ewin.alert({ message: $html });
+              // alert($html);
               // console.log($html);
             });
         }
@@ -241,7 +242,8 @@ Editor.prototype={
             });
 
             uploader.onError = function (code) {
-                alert('Eroor: ' + code);
+              //  alert('Eroor: ' + code);
+                Ewin.alert({ message: code });
             };
             updateTotalProgress();
        // });
@@ -508,7 +510,7 @@ Editor.prototype={
         });
 
         $info.on('click', '.ignore', function () {
-            alert('todo');
+           // alert('todo');
         });
         $upload.addClass('state-' + state);
     },
