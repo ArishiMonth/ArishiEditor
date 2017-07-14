@@ -1,0 +1,2 @@
+# ArishiEditor
+ArishiEditor利用HTML5的contenteditable特性实现简单富文本编辑器，图片上传插件使用百度的webuploader
