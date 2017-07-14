@@ -31,10 +31,16 @@ Editor.prototype={
             $("#imgModal").on("shown.bs.modal", function () {
                 that.initUploader();
             });
-            $(document).on("click", "button[name=saveSort]", function () {
-                that.imgChange("#content");
+            $("#imgModal").on("hidden.bs.modal", function () {
                 that.destroy();
-                $("#imgModal").modal("hide");
+            });
+            $(document).on("click", "button[name=saveSort]", function () {
+                if (that.imageList.length <= 0) {
+                    Ewin.alert({ message: "不存在已上传图片" });
+                } else {
+                    that.imgChange("#content");
+                    $("#imgModal").modal("hide");
+                }
             });
             $(document).on("click","#content>img",function(e){
            Ewin.confirm({message:"是否删除该图片？"}).on(function(){
