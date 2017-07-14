@@ -18,7 +18,7 @@ function Editor() {
 }
 Editor.prototype={
     Init:function(){
-       // this.setContentHeight();
+        this.setContentHeight();
         this.bindEvent.AddImg.call(this);
         this.bindEvent.NodeChange.call(this);
         this.bindEvent.SaveData.call(this);
@@ -56,14 +56,6 @@ Editor.prototype={
             $("#content").mousedown(function(e) {
                 that.Node= e.target;
             });
-            $("#content").bind('DOMNodeInserted',function(e){
-                e.stopPropagation();
-                if(e.target.nodeName.toLowerCase()=="div" && e.target.innerHTML=="<br>"){
-                    $p.innerHTML="<br>";
-                    $("#content")[0].insertBefore($p,e.target);
-                    $("#content")[0].removeChild(e.target);
-                }
-            });
         },
         /**
          * 最后保存获取html
@@ -72,8 +64,8 @@ Editor.prototype={
             var that=this;
             $(document).on("click","#btn_Save",function(){
                var $html=that.getAllHtml();
-
-               console.log($html);
+               alert($html);
+              // console.log($html);
             });
         }
     },
