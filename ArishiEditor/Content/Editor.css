@@ -1,0 +1,18 @@
+
+body {
+  font-family: sans-serif;
+  font-size: 16px;
+  overflow-y: scroll !important;
+}
+
+.view>p{
+  padding: 5px 0;
+}
+img{
+  max-width: 100%;
+}
+.view {
+  padding: 0;
+  word-wrap: break-word;
+  cursor: text;
+}
