@@ -175,8 +175,8 @@ Editor.prototype={
                     var json = ret;
                     if (json.state == 'SUCCESS') {
                         _this.imageList.push(json);
-                        console.log(json)
-                        console.log(file)
+                        //console.log(json)
+                       // console.log(file)
                         $file.append('<span class="success"></span>');
                     } else {
                         $file.find('.error').text(json.state).show();
@@ -239,9 +239,8 @@ Editor.prototype={
                 }
             });
 
-            uploader.onError = function (code) {
-                //  alert('Eroor: ' + code);
-                // if (code == "F_EXCEED_SIZE")
+            uploader.onError = function (code,file) {
+               // console.log(file)
                 var message = "";
                 switch (code) {
                     case "Q_TYPE_DENIED":
@@ -578,7 +577,7 @@ Editor.prototype={
     */
     setContentHeight:function(){
        var $height=window.innerHeight-$("#footer").innerHeight()-20;
-
+       //alert(window.innerHeight + "," + window.screen.availHeight)
         $("#content").css("height",$height+"px");
     },
     /**
