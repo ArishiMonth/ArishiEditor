@@ -36,6 +36,7 @@
     padding: 17px;
     margin: 0;
     border: 3px dashed transparent;
+    overflow:auto;
 }
 #uploader .queueList.webuploader-dnd-over {
     border: 3px dashed #999999;
@@ -51,9 +52,9 @@
 
 #uploader .placeholder {
     min-height: 235px;
-    padding-top: 178px;
+    padding-top: 153px;
     text-align: center;
-    background: url(images/image.png) center 93px no-repeat;
+    background: url(images/image.png) center 70px no-repeat;
     color: #cccccc;
     font-size: 18px;
     position: relative;
@@ -355,4 +356,8 @@
 #uploader .statusBar .btns .uploadBtn.disabled {
     pointer-events: none;
     opacity: 0.6;
+}
+
+#uploader .queueList.filled{
+    height:244px
 }

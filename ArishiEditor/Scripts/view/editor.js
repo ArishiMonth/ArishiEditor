@@ -42,11 +42,10 @@ Editor.prototype={
                      $("#imgModal").modal("hide");
                 }
             });
-            $(document).on("click","#content>img",function(e){
-           Ewin.confirm({message:"是否删除该图片？"}).on(function(){
-              $("#content")[0].removeChild(e.target);
-           });
-           e.stopPropagation();
+            $(document).on("click", "#content>img", function (e) {
+                Ewin.confirm({message:"是否删除该图片？"}).on(function(){
+                    $("#content")[0].removeChild(e.target);
+                });
             });
         },
         NodeChange:function(){
@@ -138,7 +137,6 @@ Editor.prototype={
             alert('Web Uploader 不支持您的浏览器！如果你使用的是IE浏览器，请尝试升级 flash 播放器');
             throw new Error('WebUploader does not support the browser you are using.');
         }
-       // $("#imgModal").on("shown.bs.modal", function () {
             // 实例化
             uploader = WebUploader.create({
                 pick: {
@@ -162,8 +160,8 @@ Editor.prototype={
                 // server: 'http://webuploader.duapp.com/server/fileupload.php',
                 server: '../UEditorController.ashx?action=uploadimage',
                 fileNumLimit: 300,
-                fileSizeLimit: 5 * 1024 * 1024,    // 200 M
-                fileSingleSizeLimit: 1 * 1024 * 1024    // 50 M
+                fileSizeLimit: 200 * 1024 * 1024,    // 200 M
+                fileSingleSizeLimit: 5 * 1024 * 1024    // 5 M
             });
             // 添加“添加文件”的按钮，
             uploader.addButton({
@@ -242,12 +240,24 @@ Editor.prototype={
             });
 
             uploader.onError = function (code) {
-              //  alert('Eroor: ' + code);
-                Ewin.alert({ message: code });
+                //  alert('Eroor: ' + code);
+                // if (code == "F_EXCEED_SIZE")
+                var message = "";
+                switch (code) {
+                    case "Q_TYPE_DENIED":
+                        message = "文件类型错误";
+                        break;
+                    case "F_EXCEED_SIZE":
+                    case "Q_EXCEED_SIZE_LIMIT":
+                        message = "该文件大小超出范围";
+                        break;
+                    default:
+                        message = code;
+                        break;
+                }
+                Ewin.alert({ message: message });
             };
             updateTotalProgress();
-       // });
-
 
         // 当有文件添加进来时执行，负责view的创建
         function addFile(file) {
@@ -413,7 +423,9 @@ Editor.prototype={
 
             } else {
                 stats = uploader.getStats();
-                text = '成功上传' + stats.successNum + '张';
+                if (state !== 'uploading') {
+                    text = '成功上传' + stats.successNum + '张';
+                }
 
                 if (stats.uploadFailNum) {
                     text += '，失败' + stats.uploadFailNum + '张';
