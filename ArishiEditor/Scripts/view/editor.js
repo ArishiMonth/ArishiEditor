@@ -57,9 +57,11 @@ Editor.prototype={
                 if($div.html()=="" ){
                     $div.append("<p><br/></p>");
                 }
+                return false;
             });
             $("#content").mousedown(function(e) {
-                that.Node= e.target;
+                that.Node = e.target;
+               // return false;
             });
         },
         /**
@@ -564,7 +566,7 @@ Editor.prototype={
             if (window.innerHeight < height-30) {
                 setTimeout(function () {
                     // 使用定时器是为了让输入框上滑时更加自然
-                   $("#content").scrollTop(opt.top);
+                   $("#content").scrollTop(opt.top-50);
                 }, 50);
             }
             //   var opt = $dxh.common.getElementOffset(that.Node);
@@ -594,7 +596,6 @@ Editor.prototype={
     }
 }
 $(function () {
-    "use strict";
 this.editor=new Editor();
 
 });
