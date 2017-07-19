@@ -298,13 +298,18 @@ $.fn.extend({
             } else {
                 // @todo lazyload
                 $wrap.text('预览中');
+                if(_this._img.isPreView){
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var base64Img= e.target.result;
+                        _this._img.imageList.push({url:base64Img}) ;
+                    };
+                    reader.readAsDataURL(file.source.source);
+                }
                 uploader.makeThumb(file, function (error, src) {
                     if (error) {
                         $wrap.text('不能预览');
                         return;
-                    }
-                    if(_this._img.isPreView){
-                       _this._img.imageList.push({url:src}) ;
                     }
                     var img = $('<img src="' + src + '">');
                     $wrap.empty().append(img);
