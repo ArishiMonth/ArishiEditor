@@ -30,6 +30,9 @@ $.fn.extend({
         _this.Init.call(this,_this._opt.content);
         $(_this).on('keyup', $.proxy(_this.keyUpHandler, this));
         $(_this).on('mousedown', $.proxy(_this.mouseDownHandler, this));
+        $(_this).blur(function (e) {
+            $("body").scrollTop(0);
+        });
         _this.ImgModal.call(this);
         _this.initUploader();
         _this.Resize.call(this);
@@ -573,10 +576,10 @@ $.fn.extend({
         window.onresize = function (e) {
             var opt = $dxh.common.getElementOffset(that.node==null?$(that)[0].lastChild:that.node);
             if (window.innerHeight < height-30) {
-                setTimeout(function () {
+               // setTimeout(function () {
                     // 使用定时器是为了让输入框上滑时更加自然
-                    $(that).scrollTop(opt.top-50);
-                }, 50);
+              //      $(that).scrollTop(opt.top-50);
+             //   }, 50);
             }
             that.setContentHeight();
         }
@@ -625,6 +628,12 @@ $.fn.extend({
         if (e.target.nodeName.toLowerCase() == "img") {
             if(confirm("是否删除该图片？")){
                 e.target.parentNode.removeChild(e.target);
+            }
+        }else{
+            var opt = $dxh.common.getElementOffset(e.target);
+            if ((e.clientY > window.innerHeight - 300)
+                && (opt.top > window.innerHeight - 300)) {
+                $("body").scrollTop(300);
             }
         }
     },
