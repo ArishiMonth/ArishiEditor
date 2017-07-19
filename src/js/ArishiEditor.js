@@ -6,139 +6,123 @@
  * Date: 2017-7-11
  * ==========================================================
  */
-
-function Editor() {
-    this.$wrap = $('#uploader');
-    this.Node = null;
-    this.imageList = [];
-    this.imgUploadHtml = $("#uploader").html();
-    this.Init();
-
-
-}
-Editor.prototype={
-    Init:function(){
-        this.setContentHeight();
-        this.QueryLayout("");
-        this.bindEvent.AddImg.call(this);
-        this.bindEvent.NodeChange.call(this);
-        this.bindEvent.SaveData.call(this);
-        this.initUploader();
-        this.Resize();
+$.fn.extend({
+    _opt: {
+        placeholader: '请输入内容',
+        imgTag:"imgModal",
+        imgUrl:"/UEditorController.ashx?action=uploadimage",
+        cssStyleId:"#editorCss",
+        content:'',
+        node:null,
+        height:null,
+        isHtml:false
     },
-    bindEvent:{
-        AddImg:function(){
-            var that = this;
-            $("#imgModal").on("shown.bs.modal", function () {
-                that.initUploader();
-            });
-            $("#imgModal").on("hidden.bs.modal", function () {
-                that.destroy();
-            });
-            $(document).on("click", "button[name=saveSort]", function () {
-                var flag = that.imageList.some(function (item) {
-                    return item != undefined;
-                });
-                if (that.imageList.length <= 0 || !flag) {
-                    Ewin.alert({ message: "不存在已上传图片" });
-                } else {
-                    that.imgChange("#content");
-                     $("#imgModal").modal("hide");
-                }
-            });
-            $(document).on("click", "#content>img", function (e) {
-                $("#content").blur();
-                Ewin.confirm({message:"是否删除该图片？"}).on(function(){
-                    $("#content")[0].removeChild(e.target);
-                });
-            });
-        },
-        NodeChange:function(){
-            var that=this;
-            var $p=document.createElement("p");
-            $("#content").keyup( function(e) {
-                var $div= $("#content");
-                //处理当删除到div时，要重新给p标签展位
-                if($div.html()=="" ){
-                    $div.append("<p><br/></p>");
-                }
-                return false;
-            });
-            $("#content").mousedown(function(e) {
-                that.Node = e.target;
-               // return false;
-            });
-        },
-        /**
-         * 最后保存获取html
-         * */
-        SaveData:function(){
-            var that=this;
-            $(document).on("click","#btn_Save",function(){
-                var $html = that.getAllHtml();
-                Ewin.alert({ message: $html });
-              // alert($html);
-              // console.log($html);
-            });
+    _img:{
+        isPreView:true,//是否属于预览（后台无服务时为true,直接展示base64位）
+        imageList:[],
+        $wrap :null,
+        imgUploadHtml:""
+    },
+    ArishiEditor:function(options){
+        var _this=this;
+
+        _this._opt = $.extend(_this._opt, options);
+        _this.Init.call(this,_this._opt.content);
+        $(_this).on('keyup', $.proxy(_this.keyUpHandler, this));
+        $(_this).on('mousedown', $.proxy(_this.mouseDownHandler, this));
+        _this.ImgModal.call(this);
+        _this.initUploader();
+        _this.Resize.call(this);
+        return{
+            options: _this._opt,
+            setContentHeight:$.proxy(this.setContentHeight, this),
+            getAllHtml:$.proxy(this.getAllHtml, this),
+
         }
     },
     /**
-    图片上传插件初始化
-    */
+     编辑器初始化
+     */
+    Init: function ($html) {
+        var  _this=this;
+        //截取获取编辑字符串
+        var indexStart = $html.indexOf("<p"),
+            indexEnd = $html.indexOf("</body");
+        if (indexStart > 0 && indexEnd > 0) {
+            $html = $html.substring(indexStart, indexEnd);
+        }
+        if ($html == "") {
+            $(_this).html("<p><br/></p>");
+        } else {
+            $(_this).html($html);
+        }
+        var styles = {
+            "-webkit-user-select": "text",
+            "user-select": "text",
+            "text-break": "brak-all",
+            "outline": "none",
+            "cursor": "text"
+        };
+        _this.setContentHeight();
+        $(_this).css(styles).attr("contenteditable", true);
+    },
+    /**
+     图片上传插件初始化
+     */
     initUploader: function () {
         var _this = this,
-       $ = jQuery,    // just in case. Make sure it's not an other libaray.
-       $wrap = _this.$wrap,
-       // 图片容器
-       $queue = $('<ul class="filelist"></ul>')
-           .appendTo($wrap.find('.queueList')),
+            $ = jQuery,    // just in case. Make sure it's not an other libaray.
+            $wrap = _this._img.$wrap,
+            // 图片容器
+            $queue = $('<ul class="filelist"></ul>')
+                .appendTo($wrap.find('.queueList')),
 
-       // 状态栏，包括进度和控制按钮
-       $statusBar = $wrap.find('.statusBar'),
+            // 状态栏，包括进度和控制按钮
+            $statusBar = $wrap.find('.statusBar'),
 
-       // 文件总体选择信息。
-       $info = $statusBar.find('.info'),
+            // 文件总体选择信息。
+            $info = $statusBar.find('.info'),
 
-       // 上传按钮
-       $upload = $wrap.find('.uploadBtn'),
+            // 上传按钮
+            $upload = $wrap.find('.uploadBtn'),
 
-       // 没选择文件之前的内容。
-       $placeHolder = $wrap.find('.placeholder'),
+            // 没选择文件之前的内容。
+            $placeHolder = $wrap.find('.placeholder'),
 
-       // 总体进度条
-       $progress = $statusBar.find('.progress').hide(),
+            // 总体进度条
+            $progress = $statusBar.find('.progress').hide(),
 
-       // 添加的文件数量
-       fileCount = 0,
+            // 添加的文件数量
+            fileCount = 0,
 
-       // 添加的文件总大小
-       fileSize = 0,
+            // 添加的文件总大小
+            fileSize = 0,
 
-       // 优化retina, 在retina下这个值是2
-       ratio = window.devicePixelRatio || 1,
+            // 优化retina, 在retina下这个值是2
+            ratio = window.devicePixelRatio || 1,
 
-       // 缩略图大小
-       thumbnailWidth = 90 * ratio,
-       thumbnailHeight = 90 * ratio,
+            // 缩略图大小
+            thumbnailWidth = 100 * ratio,
+            thumbnailHeight = 100 * ratio,
 
-       // 可能有pedding, ready, uploading, confirm, done.
-       state = 'pedding',
-       // 所有文件的进度信息，key为file id
-       percentages = {},
-       BASE_URL = "",
-       supportTransition = (function () {
-           var s = document.createElement('p').style,
-               r = 'transition' in s ||
-                     'WebkitTransition' in s ||
-                     'MozTransition' in s ||
-                     'msTransition' in s ||
-                     'OTransition' in s;
-           s = null;
-           return r;
-       })(),
+            // 可能有pedding, ready, uploading, confirm, done.
+            state = 'pedding',
+            // 所有文件的进度信息，key为file id
+            percentages = {},
+            BASE_URL = "",
+            supportTransition = (function () {
+                var s = document.createElement('p').style,
+                    r = 'transition' in s ||
+                        'WebkitTransition' in s ||
+                        'MozTransition' in s ||
+                        'msTransition' in s ||
+                        'OTransition' in s;
+                s = null;
+                return r;
+            })(),
 
-       // WebUploader实例
-       uploader;
+            // WebUploader实例
+            uploader;
 
         if (!WebUploader.Uploader.support()) {
             alert('Web Uploader 不支持您的浏览器！如果你使用的是IE浏览器，请尝试升级 flash 播放器');
@@ -165,7 +149,7 @@ Editor.prototype={
 
             chunked: true,
             // server: 'http://webuploader.duapp.com/server/fileupload.php',
-            server: '/UEditorController.ashx?action=uploadimage',
+            server: _this._opt.imgUrl,
             fileNumLimit: 300,
             fileSizeLimit: 200 * 1024 * 1024,    // 200 M
             fileSingleSizeLimit: 5 * 1024 * 1024    // 5 M
@@ -181,10 +165,10 @@ Editor.prototype={
             try {
                 var responseText = (ret._raw || ret),
                     json = JSON.parse(responseText),
-                $info = $('<p class="error"></p>');
+                    $info = $('<p class="error"></p>');
                 if (json.state == 'SUCCESS') {
                     //保证展示顺序不变
-                    _this.imageList[$file.index()] = json;
+                    _this._img.imageList[$file.index()] = json;
                     $file.append('<span class="success"></span>');
                 } else {
                     $file.find('.error').text("服务器错误").show();
@@ -319,7 +303,9 @@ Editor.prototype={
                         $wrap.text('不能预览');
                         return;
                     }
-
+                    if(_this._img.isPreView){
+                       _this._img.imageList.push({url:src}) ;
+                    }
                     var img = $('<img src="' + src + '">');
                     $wrap.empty().append(img);
                 }, thumbnailWidth, thumbnailHeight);
@@ -543,26 +529,26 @@ Editor.prototype={
         $upload.addClass('state-' + state);
     },
     /**
-    *图片上传插件销毁
-    */
+     *图片上传插件销毁
+     */
     destroy: function () {
-        this.$wrap.empty();
-        this.$wrap.append(this.imgUploadHtml);
+        this._img.$wrap.empty();
+        this._img.$wrap.append(this._img.imgUploadHtml);
     },
     /**
      图片选择更改时处理
      */
     imgChange: function (obj1) {
         var that = this;
-        var imgContainer = $(obj1)[0];
+        var imgContainer =obj1[0];
         if(imgContainer.children.length>0 && imgContainer.children[0].firstChild && imgContainer.children[0].firstChild.nodeName.toLowerCase()=="br"){
-            $(obj1).empty();
+            obj1.empty();
         }
         if(imgContainer.lastElementChild && imgContainer.lastElementChild.nodeName.toLowerCase()=="p" && (imgContainer.lastElementChild.innerHTML=="<br>" || imgContainer.lastElementChild.innerHTML=="")){
             imgContainer.removeChild(imgContainer.lastElementChild);
         }
-        for (var i = 0; i < that.imageList.length; i++) {
-            data = this.imageList[i];
+        for (var i = 0; i < that._img.imageList.length; i++) {
+            data = that._img.imageList[i];
             if (data == undefined) {
                 continue;
             }
@@ -570,9 +556,8 @@ Editor.prototype={
             img.setAttribute("src", data.url);
             imgContainer.appendChild(img);
         }
-        that.imageList = [];
-        $("#content").append("<p><br/></p>");
-        //that.imgRemove();
+        that._img.imageList = [];
+        obj1.append("<p><br/></p>");
     },
     /**
      * 软键盘弹出时屏幕上移
@@ -581,56 +566,34 @@ Editor.prototype={
         var that = this;
         var height = window.innerHeight;
         window.onresize = function (e) {
-            var opt = $dxh.common.getElementOffset(that.Node==null?$("#content")[0].lastChild:that.Node);
+            var opt = $dxh.common.getElementOffset(that.node==null?$(that)[0].lastChild:that.node);
             if (window.innerHeight < height-30) {
                 setTimeout(function () {
                     // 使用定时器是为了让输入框上滑时更加自然
-                   $("#content").scrollTop(opt.top-50);
+                    $(that).scrollTop(opt.top-50);
                 }, 50);
             }
-            //   var opt = $dxh.common.getElementOffset(that.Node);
-            // that.Node=$("#content").clientY+document.body.scrollTop+document.documentElement.scrollTop;
             that.setContentHeight();
         }
     },
     /**
-    屏幕高度发生变化时，界面高度自动改变
-    */
+     屏幕高度发生变化时，界面高度自动改变
+     */
     setContentHeight: function () {
-       var $height=window.innerHeight-$("#footer").innerHeight()-20;
-       //alert(window.innerHeight + "," + window.screen.availHeight)
-        $("#content").css("height",$height+"px");
-    },
-    /**
-   编辑器初始化
-   */
-    QueryLayout: function ($html) {
-       // var $html = window.parent.document && $(window.parent.document).find("#ContentHtml").val();
-        //截取获取编辑字符串
-        var indexStart = $html.indexOf("<p"),
-            indexEnd = $html.indexOf("</body");
-        if (indexStart > 0 && indexEnd > 0) {
-            $html = $html.substring(indexStart, indexEnd);
-        }
-        if ($html == "") {
-            $("#content").html("<p><br/></p>");
-        } else {
-            $("#content").html($html);
-        }
-        var styles = {
-            "-webkit-user-select": "text",
-            "user-select": "text",
-            "text-break": "brak-all",
-            "outline": "none",
-            "cursor": "text"
-        };
-        $("#content").css(styles).attr("contenteditable", true);
+        var _this=this;
+        var $height=_this._opt.height==null?window.innerHeight-$("#footer").innerHeight()-20:_this._opt.height;
+        //alert(window.innerHeight + "," + window.screen.availHeight)
+        $(this).css("height",$height+"px");
     },
     /**
      * 获取html
      * @return: 以<html><head>...</head><body>...</body></html>形式返回
      * */
     getAllHtml:function(){
+        var _this=this,
+            $headHtml = $(_this._opt.cssStyleId)[0].href,
+            $bodyHtml=$(this).html(),
+            $firstP="";
         if ($bodyHtml == "" || $bodyHtml == "<p><br></p>") {
             return "";
         }
@@ -642,12 +605,72 @@ Editor.prototype={
             $firstP = '<p class="hide"></p>';
         }
         return '<html><head>' + '<meta http-equiv="Content-Type" content="text/html; charset="UTF-8"/>'
-                + '<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, minimal-ui">'
-                + $headHtml + '</head>'
-                + '<body class="view">' + $firstP + $bodyHtml + '</body></html>';
-    }
-}
-$(function () {
-this.editor=new Editor();
+            + '<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, minimal-ui">'
+            + $headHtml + '</head>'
+            + '<body class="view">' + $firstP + $bodyHtml + '</body></html>';
+    },
+    keyUpHandler:function(e){
+        //处理当删除到div时，要重新给p标签展位
+        if($(e).html()=="" ){
+            $(e).append("<p><br/></p>");
+        }
+    },
+    mouseDownHandler:function(e){
+        this._opt.node = e.target;
+        if (e.target.nodeName.toLowerCase() == "img") {
+            if(confirm("是否删除该图片？")){
+                e.target.parentNode.removeChild(e.target);
+            }
+        }
+    },
+    /**
+     * 图片上传插件弹窗
+     * */
+    ImgModal:function(){
+        var _this=this,
+            $imgUploadHtml=' <div class="statusBar" style="display:none;"> <div class="progress" style="display: none;">'
+            +'<span class="text">0%</span> <span class="percentage" style="width: 0%;"></span> </div>'
+            +'<div class="info" style="padding:0;line-height:27px;">共0张（0B），已上传0张</div> <div class="btns" style="top:-7px;right:0px;line-height: 30px;">'
+            +'<div id="filePicker2" class="webuploader-container"> <div class="webuploader-pick">继续添加</div>'
+            +'<div id="rt_rt_1bi0pe4e667mqnu1bskpr91jjb6" style="position: absolute; top: 0px; left: 0px; width: 1px; height: 1px; overflow: hidden;">'
+            +'<input type="file" name="file" class="webuploader-element-invisible" multiple="multiple" accept="image/*">'
+            +'<label style="opacity: 0; width: 100%; height: 100%; display: block; cursor: pointer; background: rgb(255, 255, 255);"></label>'
+            +'</div> </div> <div class="uploadBtn state-pedding">开始上传</div> </div> </div>'
+            +'<div class="queueList"> <div id="dndArea" class="placeholder"> <div id="filePicker" class="webuploader-container">'
+            +'<div class="webuploader-pick">点击选择图片</div>'
+            +'<div id="rt_rt_1bi0pe4e21896147b1mh814gl12001" style="position: absolute; top: 0px; left: 448px; width: 168px; height: 44px; overflow: hidden; bottom: auto; right: auto;">'
+            +'<input type="file" name="file" class="webuploader-element-invisible" multiple="multiple" accept="image/*">'
+            +'<label style="opacity: 0; width: 100%; height: 100%; display: block; cursor: pointer; background: rgb(255, 255, 255);"></label>'
+            +'</div> </div> </div> <ul class="filelist"></ul> </div>',
 
+             $html=' <div name="edit_img"> <div class="modal fade" id="'+_this._opt.imgTag+'" tabindex="-1" role="dialog" aria-labelledby="treeModalLabel" aria-hidden="true">'
+            +'<div class="modal-dialog"> <div class="modal-content"> <div class="modal-header">'
+            +'<button type="button" class="close" data-dismiss="modal" aria-hidden="true"> &times; </button>'
+            +'<h4 class="modal-title">图片上传 </h4> </div>'
+            +'<div class="modal-body"> <div id="uploader" class="wu-example"> '+$imgUploadHtml
+            +'</div></div> <div class="modal-footer"> <button name="cancelAdd" type="button" class="btn btn-default" data-dismiss="modal">取消 </button>'
+            +'<button name="saveSort" type="submit" class="btn btn-primary">确定 </button> </div> </div> </div> </div> </div>';
+        $(window.document.body).append($html);
+        _this._img.$wrap = $('#uploader');
+        _this._img.imgUploadHtml=$imgUploadHtml;
+        $("#"+_this._opt.imgTag).on("shown.bs.modal", function () {
+            _this.initUploader();
+        });
+        $("#"+_this._opt.imgTag).on("hidden.bs.modal", function () {
+            _this.destroy();
+        });
+        $("#"+_this._opt.imgTag).on('click','button[name=saveSort]',function(e){
+            var flag = _this._img.imageList.some(function (item) {
+                return item != undefined;
+            });
+            if (_this._img.imageList.length <= 0 || !flag) {
+                alert({ message: "不存在已上传图片" });
+            } else {
+                _this.imgChange(_this);
+                $("#"+_this._opt.imgTag).modal("hide");
+            }
+        })
+    }
 });
+
+
