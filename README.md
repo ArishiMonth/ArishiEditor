@@ -5,8 +5,7 @@ ArishiEditor利用HTML5的contenteditable特性实现简单富文本编辑器，
 目录
 
    ——ArishiEditor：具有图片上传后台（.net）的完整demo
-   
-   ——src:无后台demo，纯前端展示，图片使用base64位字符串进行预览
+   ——src：无后台demo，纯前端展示，图片使用base64位字符串进行预览
 
 该编辑器兼容移动端与PC端，图片上传后端使用.NET，如1.1所示，根据不同语言改变后台地址即可，
 图片插件后端相关详细规则查看webuploader官网(http://fex.baidu.com/webuploader/doc/index.html)：
