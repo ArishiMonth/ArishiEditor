@@ -130,3 +130,6 @@ cursor:pointer;
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
 }
+.article-content>.placeholder{
+    color:#999999;
+}

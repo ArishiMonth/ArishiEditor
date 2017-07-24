@@ -22,6 +22,7 @@ $(function () {
         imgTag: "imgModal",
         imgUrl: "/UEditorController.ashx?action=uploadimage",
         content: '',
+        placeholder:"请输入商品详情",
         cssStyleId: "#editorCss",
         height: window.innerHeight - $("#footer").innerHeight() - 20,
         resizeHandler: function () {

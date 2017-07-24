@@ -11,6 +11,7 @@ $.fn.extend({
         imgTag:"imgModal",
         imgUrl:"/UEditorController.ashx?action=uploadimage",
         cssStyleId:"#editorCss",
+        placeholder:"请输入内容",
         content:'',
         node:null,
         height:0,
@@ -31,15 +32,16 @@ $.fn.extend({
         if (typeof (_this._opt.resizeHandler) !== 'function') {
             _this._opt.resizeHandler=_this.resizeHandler;
         }
-        _this.Init.call(this,_this._opt.content);
+        _this.Init(_this._opt.content);
         $(_this).on('keyup', $.proxy(_this.keyUpHandler, this));
         $(_this).on('mousedown', $.proxy(_this.mouseDownHandler, this));
         $(_this).blur(function (e) {
             $("body").scrollTop(0);
         });
+        _this.placeholderHandler();
         _this.ImgModal.call(this);
         _this.initUploader();
-        _this._opt.resizeHandler.call(this);
+        _this._opt.resizeHandler();
         return{
             options: _this._opt,
             getAllHtml:$.proxy(this.getAllHtml, this),
@@ -705,7 +707,28 @@ $.fn.extend({
             width: w,
             height: h
         }
-    }
+    },
+    /**
+     * 模拟input的placeholder属性
+     * */
+    placeholderHandler: function () {
+        var _this = this;
+        var imgReg = /<img\s*([\w]+=(\"|\')([^\"\']*)(\"|\')\s*)*\/?>/;
+        $(this).on('focus', function () {
+            if ($.trim($(this).text()) === _this._opt.placeholder) {
+                $(this).html('');
+            }
+        })
+            .on('blur', function () {
+                if (!$.trim($(this).text()) && !imgReg.test($(this).html())) {
+                    $(this).html('<div class="placeholder" style="pointer-events: none;">' + _this._opt.placeholder + '</div>');
+                }
+            });
+
+        if (!$.trim($(this).text()) && !imgReg.test($(this).html())) {
+            $(this).html('<div class="placeholder" style="pointer-events: none;">' + _this._opt.placeholder + '</div>');
+        }
+    },
 });
 
 
