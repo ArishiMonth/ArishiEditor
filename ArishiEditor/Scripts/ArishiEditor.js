@@ -555,7 +555,10 @@ $.fn.extend({
     imgChange: function (obj1) {
         var that = this;
         var imgContainer =obj1[0];
-        if(imgContainer.children.length>0 && imgContainer.children[0].firstChild && imgContainer.children[0].firstChild.nodeName.toLowerCase()=="br"){
+        if((imgContainer.children.length>0
+            && imgContainer.children[0].firstChild
+            && imgContainer.children[0].firstChild.nodeName.toLowerCase()=="br")
+        || $.trim(obj1.text()) === that._opt.placeholder){
             obj1.empty();
         }
         if(imgContainer.lastElementChild && imgContainer.lastElementChild.nodeName.toLowerCase()=="p" && (imgContainer.lastElementChild.innerHTML=="<br>" || imgContainer.lastElementChild.innerHTML=="")){
