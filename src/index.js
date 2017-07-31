@@ -25,7 +25,12 @@ $(function(){
    //未添加图片后台时，建议编辑器中只有一张图片时查看getAllHtml方法是否正确，因为base64位字符串过多，在手机中查看容易导致浏览器崩溃
     $(document).on("click","#btn_Save",function(){
         var $html = editor.getAllHtml();
-        alert($html);
+        $arishi.common.info("show",{
+            content:"获取html成功",
+            container:'body',
+            timeout:1000
+        });
+        //alert($html);
     });
 
 });

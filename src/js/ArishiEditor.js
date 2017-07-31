@@ -18,6 +18,7 @@ $.fn.extend({
         isHtml:false,
         //事件
         resizeHandler:undefined,
+        getElementOffset:undefined
     },
     _img:{
         isPreView:true,//是否属于预览（后台无服务时为true,直接展示base64位）
@@ -31,6 +32,9 @@ $.fn.extend({
         _this._opt = $.extend(_this._opt, options);
         if (typeof (_this._opt.resizeHandler) !== 'function') {
             _this._opt.resizeHandler=_this.resizeHandler;
+        }
+        if (typeof (_this._opt.getElementOffset) !== 'function') {
+            _this._opt.getElementOffset=_this.getElementOffset;
         }
         _this.Init(_this._opt.content);
         $(_this).on('keyup', $.proxy(_this.keyUpHandler, this));
@@ -434,7 +438,7 @@ $.fn.extend({
             } else if (state === 'confirm') {
                 stats = uploader.getStats();
                 if (stats.uploadFailNum) {
-                    text = '已成功上传' + stats.successNum + '张';
+                    text =  stats.uploadFailNum + '张上传失败,'+'<a class="retry" href="#">重新上传</a>';
                 }
 
             } else {
