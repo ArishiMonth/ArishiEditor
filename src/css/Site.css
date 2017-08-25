@@ -130,7 +130,7 @@ cursor:pointer;
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
 }
-.article-content>.placeholder{
+.article-content .placeholder{
     color:#999999;
 }
 .alert-info {
@@ -149,4 +149,17 @@ cursor:pointer;
 }
 .alert-info>.info-content {
     position:relative;
+}
+.font_Editor{
+    display:block !important;
+}
+.e_font{
+    padding:10px 0 0 0 !important;
+}
+.b4{
+    background:#808080;
+}
+.btn-b{
+    color:#fff !important;
+    border-bottom:2px solid #fff;
 }

@@ -6,7 +6,7 @@ $(function(){
         imgTag:"imgModal",
         imgUrl:"/UEditorController.ashx?action=uploadimage",
         content:'',
-        placeholder:"请输入商品详情",
+        placeholder:"请输入文字或插入图片",
         cssStyleId:"#editorCss",
         height:window.innerHeight - $("#footer").innerHeight()-20,
         resizeHandler:function(){
@@ -30,7 +30,7 @@ $(function(){
             container:'body',
             timeout:1000
         });
-        //alert($html);
+        alert($html);
     });
 
 });

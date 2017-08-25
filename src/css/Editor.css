@@ -19,3 +19,6 @@ img{
   cursor: text;
   -webkit-overflow-scrolling : touch; 
 }
+.font_Editor{
+  display:none;
+}

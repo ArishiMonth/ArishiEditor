@@ -18,10 +18,12 @@ $.fn.extend({
         isHtml:false,
         //事件
         resizeHandler:undefined,
+        getElementOffset:undefined
     },
     _img:{
         isPreView:true,//是否属于预览（后台无服务时为true,直接展示base64位）
         imageList:[],
+        imgNode:null,
         $wrap :null,
         imgUploadHtml:""
     },
@@ -32,8 +34,10 @@ $.fn.extend({
         if (typeof (_this._opt.resizeHandler) !== 'function') {
             _this._opt.resizeHandler=_this.resizeHandler;
         }
+        if (typeof (_this._opt.getElementOffset) !== 'function') {
+            _this._opt.getElementOffset=_this.getElementOffset;
+        }
         _this.Init(_this._opt.content);
-        $(_this).on('keyup', $.proxy(_this.keyUpHandler, this));
         $(_this).on('mousedown', $.proxy(_this.mouseDownHandler, this));
         $(_this).blur(function (e) {
             $("body").scrollTop(0);
@@ -42,6 +46,7 @@ $.fn.extend({
         _this.ImgModal.call(this);
         _this.initUploader();
         _this._opt.resizeHandler();
+        _this.imgUpload();
         return{
             options: _this._opt,
             getAllHtml:$.proxy(this.getAllHtml, this),
@@ -60,7 +65,7 @@ $.fn.extend({
             $html = $html.substring(indexStart, indexEnd);
         }
         if ($html == "") {
-            $(_this).html("<p><br/></p>");
+            $(_this).html("<div class='e_font font_Editor'><br/></div>");
         } else {
             $(_this).html($html);
         }
@@ -73,7 +78,8 @@ $.fn.extend({
         };
         var $height=_this._opt.height==0?"auto":_this._opt.height;
         _this.setContentHeight($height,_this._opt.height==0?true:false);
-        $(_this).css(styles).attr("contenteditable", true);
+        $("#content>div").addClass("e_font");
+        $("#content>.e_font").attr("contenteditable", true);
     },
     /**
      图片上传插件初始化
@@ -434,7 +440,7 @@ $.fn.extend({
             } else if (state === 'confirm') {
                 stats = uploader.getStats();
                 if (stats.uploadFailNum) {
-                    text = '已成功上传' + stats.successNum + '张';
+                    text =  stats.uploadFailNum + '张上传失败,'+'<a class="retry" href="#">重新上传</a>';
                 }
 
             } else {
@@ -555,26 +561,31 @@ $.fn.extend({
     imgChange: function (obj1) {
         var that = this;
         var imgContainer =obj1[0];
-        if((imgContainer.children.length>0
-            && imgContainer.children[0].firstChild
-            && imgContainer.children[0].firstChild.nodeName.toLowerCase()=="br")
-        || $.trim(obj1.text()) === that._opt.placeholder){
-            obj1.empty();
-        }
         if(imgContainer.lastElementChild && imgContainer.lastElementChild.nodeName.toLowerCase()=="p" && (imgContainer.lastElementChild.innerHTML=="<br>" || imgContainer.lastElementChild.innerHTML=="")){
-            imgContainer.removeChild(imgContainer.lastElementChild);
+         //   imgContainer.removeChild(imgContainer.lastElementChild);
+            var $div = document.createElement("div"),
+                $br = document.createElement("br");
+            $div.appendChild($br);
+            $div.setAttribute("class", "e_font font_Editor");
+            $div.setAttribute("contenteditable", "true");
+            imgContainer.appendChild($div);
         }
         for (var i = 0; i < that._img.imageList.length; i++) {
             data = that._img.imageList[i];
             if (data == undefined) {
                 continue;
             }
-            var img = document.createElement("img");
+            var img = document.createElement("img"),
+                $div = document.createElement("div"),
+                $br = document.createElement("br");
+            $div.appendChild($br);
+            $div.setAttribute("class", "e_font font_Editor");
+            $div.setAttribute("contenteditable", "true");
             img.setAttribute("src", data.url);
             imgContainer.appendChild(img);
+            imgContainer.appendChild($div);
         }
         that._img.imageList = [];
-        obj1.append("<p><br/></p>");
     },
     /**
      * 软键盘弹出时屏幕上移
@@ -609,6 +620,7 @@ $.fn.extend({
      * @return: 以<html><head>...</head><body>...</body></html>形式返回
      * */
     getAllHtml:function(){
+        this.setFontEditor();
         var _this=this,
             $headHtml = $(_this._opt.cssStyleId)[0].href,
             $bodyHtml=$(this).html(),
@@ -623,24 +635,55 @@ $.fn.extend({
         } else {
             $firstP = '<p class="hide"></p>';
         }
+        $(this).find(".e_font").attr("contenteditable","true");
+        this.placeholderHandler();
         return '<html><head>' + '<meta http-equiv="Content-Type" content="text/html; charset="UTF-8"/>'
             + '<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, minimal-ui">'
             + $headHtml + '</head>'
             + '<body class="view">' + $firstP + $bodyHtml + '</body></html>';
     },
-    keyUpHandler:function(e){
-        //处理当删除到div时，要重新给p标签展位
-        if($(e.target).html()=="" ){
-            $(e.target).append("<p><br/></p>");
+    setFontEditor: function () {
+        $(this).find(".e_font").removeClass("font_Editor").addClass("font_Editor");
+        var $pfonts =  $(this).find(".e_font");
+        if ($pfonts.length > 0) {
+            $pfonts.each(function (i,item) {
+                var $html=$(item).html();
+                if ($html.toLowerCase() != "<br>" && $html.toLowerCase() != "") {
+                    $(item).removeClass("font_Editor");
+                }
+            })
+        }
+        $(this).find(".placeholder").remove();
+        $(this).find(".e_font").removeAttr("contenteditable");
+    },
+    deleteImgHandler:function(){
+        var that=this;
+        $("#SingleimgModal").modal("hide");
+        if(confirm("是否删除该图片？")){
+            var preNode = that._img.imgNode.previousSibling.innerHTML,
+                nextNode = that._img.imgNode.nextSibling.innerHTML;
+            if (preNode == "" || preNode.toLowerCase() == "<br>") {
+                preNode = nextNode;
+            } else {
+                preNode += "<br>" + nextNode;
+            }
+            $(that._img.imgNode.nextSibling).html(preNode);
+            that._img.imgNode.parentNode.removeChild(that._img.imgNode.previousSibling);
+
+            that._img.imgNode.parentNode.removeChild(that._img.imgNode);
+            that._img.imgNode = null;
         }
     },
     mouseDownHandler:function(e){
         this._opt.node = e.target;
         if (e.target.nodeName.toLowerCase() == "img") {
-            if(confirm("是否删除该图片？")){
-                e.target.parentNode.removeChild(e.target);
-            }
+            this._img.imgNode = e.target;
+            $("#SingleimgModal").modal("show");
         }
+    },
+    updateImgHandler:function(){
+        $("#SingleimgModal").modal("hide");
+        $("#file").trigger("click");
     },
     /**
      * 图片上传插件弹窗
@@ -669,6 +712,13 @@ $.fn.extend({
             +'<div class="modal-body"> <div id="uploader" class="wu-example"> '+$imgUploadHtml
             +'</div></div> <div class="modal-footer"> <button name="cancelAdd" type="button" class="btn btn-default" data-dismiss="modal">取消 </button>'
             +'<button name="saveSort" type="submit" class="btn btn-primary">确定 </button> </div> </div> </div> </div> </div>';
+        $html+='<div class="modal bottom fade" id="SingleimgModal" style="top:auto;"tabindex="-1" role="dialog" aria-labelledby="treeModalLabel" aria-hidden="true">'+
+            '<div class="modal-dialog" style="margin: 10px auto auto auto;width:100%;"> <form id="imgForm" target="_blank" class="hide">'+
+            '<input type="file" name="file" id="file" data-min-file-count="1" value="" capture="camera" accept="image/*" /> </form>'+
+            '<div class="modal-content btn-group-vertical" role="group" style="width:100%;">'+
+            '<button name="updateImg"  type="button" class="btn btn-lg btn-b b1 " data-dismiss="modal">替换图片 </button>'+
+            '<button name="deleteImg"  type="button" class="btn btn-lg btn-b b1 " data-dismiss="modal">删除图片 </button>'+
+            '<button name="cancelAdd"  type="button" class="btn btn-lg btn-w b4" data-dismiss="modal">取消 </button> </div> </div> </div>'
         $(window.document.body).append($html);
         _this._img.$wrap = $('#uploader');
         _this._img.imgUploadHtml=$imgUploadHtml;
@@ -688,7 +738,13 @@ $.fn.extend({
                 _this.imgChange(_this);
                 $("#"+_this._opt.imgTag).modal("hide");
             }
-        })
+        });
+        $(document).on('click', 'button[name=deleteImg]', function () {
+            _this.deleteImgHandler();
+        });
+        $(document).on('click', 'button[name=updateImg]', function () {
+            _this.updateImgHandler();
+        });
     },
     /**
      获取元素对应位置
@@ -717,7 +773,7 @@ $.fn.extend({
     placeholderHandler: function () {
         var _this = this;
         var imgReg = /<img\s*([\w]+=(\"|\')([^\"\']*)(\"|\')\s*)*\/?>/;
-        $(this).on('focus', function () {
+        $(".e_font:first").on('focus', function () {
             if ($.trim($(this).text()) === _this._opt.placeholder) {
                 $(this).html('');
             }
@@ -728,9 +784,52 @@ $.fn.extend({
                 }
             });
 
-        if (!$.trim($(this).text()) && !imgReg.test($(this).html())) {
-            $(this).html('<div class="placeholder" style="pointer-events: none;">' + _this._opt.placeholder + '</div>');
+        if (!$.trim($(".e_font:first").text()) && !imgReg.test($(".e_font:first").html())) {
+            $(".e_font:first").html('<div class="placeholder" style="pointer-events: none;">' + _this._opt.placeholder + '</div>');
         }
+    },
+    imgUpload: function () {
+        var _upFile = document.getElementById("file"),
+            that = this;;
+        //文件上传控件change事件
+        _upFile.addEventListener("change", function () {
+            if (_upFile.files.length === 0) {
+                return;
+            }
+            var oFile = _upFile.files[0];
+
+            if (!new RegExp("(jpg|jpeg|png)+", "gi").test(oFile.type)) {
+                Ewin.alert("照片上传：文件类型必须是JPG、JPEG、PNG");
+                return;
+            }
+           /*有后台代码时使用
+            $("#imgForm").ajaxSubmit({
+                url: './UpLoadPhoto',
+                type: 'POST',
+                dataType: 'json',
+                beforeSubmit: function () {
+                    $dxh.common.loading('#content', 'show')
+                },
+                success: function (json) {
+                    if (json.ResultCode == 1 && that.imgNode != null) {
+                        $(that.imgNode).attr("src", json.Data);
+                        that.imgNode = null;
+                    } else {
+                        Ewin.alert(json.ResultMsg);
+                    }
+                    $dxh.common.loading('#content', 'hide')
+                }
+            });*/
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var base64Img = e.target.result;
+                //压缩前预览
+                $(that._img.imgNode).attr("src",base64Img);
+                that._img.imgNode = null;
+                // that.imgChange('#showImg', base64Img);
+            };
+            reader.readAsDataURL(oFile);
+        }, false);
     },
 });
 
